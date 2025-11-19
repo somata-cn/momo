@@ -1,44 +1,4 @@
 <template>
-  <!-- 训练模式控制栏 - 始终显示 -->
-  <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-      <div class="flex items-center space-x-3">
-        <span class="text-sm font-medium text-gray-700">训练模式：</span>
-        <div class="flex space-x-2">
-          <button
-            @click="setTrainingMode('normal')"
-            class="px-3 py-1 text-xs rounded-full transition-colors"
-            :class="trainingMode === 'normal' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'"
-          >
-            正常模式
-          </button>
-
-
-          <button
-            @click="setTrainingMode('memorize')"
-            class="px-3 py-1 text-xs rounded-full transition-colors"
-            :class="trainingMode === 'memorize' ? 'bg-purple-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'"
-          >
-            背题模式
-          </button>
-        </div>
-      </div>
-      <div class="flex items-center justify-between">
-        <div class="text-xs text-gray-500">
-          <span v-if="trainingMode === 'memorize'">背题模式</span>
-          <span v-else>总题数：{{ totalQuestions }} 题</span>
-        </div>
-       <span
-         v-if="trainingMode === 'normal'"
-         @click="shuffleQuestions"
-         class="ml-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 cursor-pointer transition-colors"
-       >
-         重新打乱
-       </span>
-      </div>
-    </div>
-  </div>
-
   <!-- 正常模式 - 单题显示 -->
   <div v-if="trainingMode !== 'memorize' && currentQuestion" class="card">
     <!-- 题目头部信息 -->
@@ -433,16 +393,7 @@ const currentDisplayIndex = computed(() => {
   return currentQuestionIndex.value + 1
 })
 
-// 训练模式相关方法
-function setTrainingMode(mode) {
-  // 清理当前状态，防止模式切换时的显示冲突
-  clearAnswer()
-  questionStore.setTrainingMode(mode)
-}
 
-function shuffleQuestions() {
-  questionStore.shuffleQuestions()
-}
 
 // 监听题目变化
 watch(currentQuestion, (newQuestion) => {

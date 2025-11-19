@@ -1,5 +1,5 @@
 <template>
-  <div class="card h-full memorize-mode-list" :class="{ 'flex flex-col': trainingMode === 'memorize' }">
+  <div class="card h-full memorize-mode-list hide-scrollbar" :class="{ 'flex flex-col': trainingMode === 'memorize' }">
     <div class="flex items-center justify-between mb-4 flex-shrink-0">
       <h2 class="text-lg font-semibold text-gray-800">题目列表</h2>
       <div class="text-sm text-gray-500">

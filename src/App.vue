@@ -46,17 +46,55 @@
       
       <!-- 题目练习区域 -->
       <div v-else>
+        <!-- 训练模式控制栏 -->
+        <div class="mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div class="flex items-center space-x-3">
+              <span class="text-sm font-medium text-gray-700">训练模式：</span>
+              <div class="flex space-x-2">
+                <button
+                  @click="questionStore.trainingMode = 'normal'"
+                  class="px-3 py-1 text-xs rounded-full transition-colors"
+                  :class="trainingMode === 'normal' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                >
+                  正常模式
+                </button>
+                <button
+                  @click="questionStore.trainingMode = 'memorize'"
+                  class="px-3 py-1 text-xs rounded-full transition-colors"
+                  :class="trainingMode === 'memorize' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                >
+                  背题模式
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="text-xs text-gray-500">
+                <span v-if="trainingMode === 'memorize'">背题模式</span>
+                <span v-else>总题数：{{ totalQuestions }} 题</span>
+              </div>
+              <button
+                v-if="trainingMode === 'normal'"
+                @click="questionStore.shuffleQuestions()"
+                class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+              >
+                重新打乱
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 桌面端布局 -->
-        <div class="hidden lg:grid lg:grid-cols-4 gap-6">
-          <!-- 左侧题目列表 -->
-          <div class="lg:col-span-1">
+        <div class="hidden lg:grid gap-6" :class="trainingMode === 'memorize' ? 'lg:grid-cols-1' : 'lg:grid-cols-4'">
+          <!-- 左侧题目列表 - 仅在非背题模式下显示 -->
+          <div v-if="trainingMode !== 'memorize'" class="lg:col-span-1">
             <div class="sticky top-6">
               <QuestionList />
             </div>
           </div>
           
           <!-- 右侧答题区域 -->
-          <div class="lg:col-span-3">
+          <div :class="trainingMode === 'memorize' ? 'lg:col-span-1' : 'lg:col-span-3'">
             <QuestionDisplay />
           </div>
         </div>
@@ -68,8 +106,8 @@
             <QuestionDisplay />
           </div>
           
-          <!-- 题目列表在下方 -->
-          <div class="sticky top-4">
+          <!-- 题目列表在下方 - 仅在非背题模式下显示 -->
+          <div v-if="trainingMode !== 'memorize'" class="sticky top-4">
             <QuestionList />
           </div>
         </div>
