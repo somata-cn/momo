@@ -139,7 +139,8 @@ npm run preview
       "C、选项内容",
       "D、选项内容"
     ],
-    "answer": ["A"]
+    "answer": ["A"],
+    "explanation": "题目解析内容"
   }
 ]
 ```
