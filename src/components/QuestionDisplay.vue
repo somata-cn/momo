@@ -63,7 +63,7 @@
         <div>正确答案：{{ correctAnswerDisplay }}</div>
         <div>你的答案：{{ userAnswerDisplay }}</div>
       </div>
-      <div v-if="currentQuestion.explanation" class="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm">
+      <div ref="explanationRef" v-if="currentQuestion.explanation" class="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm">
         <div class="flex items-center space-x-2 mb-1">
           <div class="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
             <svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -231,6 +231,7 @@ const selectedOptions = ref([])
 const hasSubmitted = ref(false)
 const isCorrect = ref(false)
 const questionCardRef = ref(null)
+const explanationRef = ref(null)
 
 // 解析选项
 const parsedOptions = computed(() => {
@@ -358,6 +359,17 @@ function submitAnswer() {
   const result = questionStore.submitAnswer(selectedOptions.value)
   hasSubmitted.value = true
   isCorrect.value = result
+  
+  // 延迟滚动到解析部分，确保DOM已更新
+  setTimeout(() => {
+    if (explanationRef.value) {
+      explanationRef.value.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      })
+    }
+  }, 100)
 }
 
 // 清除答案
