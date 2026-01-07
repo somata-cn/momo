@@ -77,40 +77,44 @@
     </div>
 
     <!-- 控制按钮 -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-      <button 
-        @click="previousQuestion" 
-        :disabled="currentQuestionIndex === 0"
-        class="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto order-2 sm:order-1"
-      >
-        上一题
-      </button>
-      
-      <div class="flex space-x-3 w-full sm:w-auto order-1 sm:order-2">
+    <div class="flex flex-col space-y-3">
+      <!-- 提交/重新作答按钮 -->
+      <div class="order-1 sm:order-2">
         <button 
           v-if="!hasSubmitted"
           @click="submitAnswer" 
           :disabled="selectedOptions.length === 0"
-          class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+          class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed w-full py-3 text-base"
         >
           提交答案 (Enter)
         </button>
         <button 
           v-else
           @click="clearAnswer"
-          class="btn-secondary flex-1 sm:flex-none"
+          class="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed w-full py-3 text-base"
         >
           重新作答
         </button>
       </div>
       
-      <button 
-        @click="nextQuestion" 
-        :disabled="currentQuestionIndex === availableQuestionCount - 1"
-        class="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto order-3"
-      >
-        下一题
-      </button>
+      <!-- 导航按钮 -->
+      <div class="flex space-x-3 order-2 sm:order-1 sm:order-3">
+        <button 
+          @click="previousQuestion" 
+          :disabled="currentQuestionIndex === 0"
+          class="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed flex-1 py-3 text-base"
+        >
+          上一题
+        </button>
+        
+        <button 
+          @click="nextQuestion" 
+          :disabled="currentQuestionIndex === availableQuestionCount - 1"
+          class="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed flex-1 py-3 text-base"
+        >
+          下一题
+        </button>
+      </div>
     </div>
 
     <!-- 快捷键提示 -->
