@@ -76,6 +76,24 @@
               </button>
 
               <button 
+                @click="showMergeWrongAnswersConfirm = true"
+                class="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+              >
+                <div class="flex items-center space-x-3">
+                  <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <div class="text-left">
+                    <div class="text-sm font-medium text-gray-900">合并错题答题情况</div>
+                    <div class="text-xs text-gray-500">将错题模式的答题记录合并到正常模式</div>
+                  </div>
+                </div>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <button 
                 @click="showClearDataConfirm = true"
                 class="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
               >
@@ -162,6 +180,41 @@
       </div>
     </Transition>
 
+    <!-- 合并错题答题情况确认对话框 -->
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="showMergeWrongAnswersConfirm" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+          <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">合并错题答题情况</h3>
+            <p class="text-sm text-gray-500 mb-6">
+              此操作将把错题模式的答题记录合并到正常模式，并清空错题模式的答题记录。是否继续？
+            </p>
+            <div class="flex space-x-3">
+              <button @click="showMergeWrongAnswersConfirm = false" class="flex-1 btn-secondary">
+                取消
+              </button>
+              <button @click="mergeWrongAnswers" class="flex-1 btn-primary">
+                确认
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- 清除数据确认对话框 -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
@@ -216,6 +269,7 @@ const questionStore = useQuestionStore()
 
 const showResetProgressConfirm = ref(false)
 const showClearDataConfirm = ref(false)
+const showMergeWrongAnswersConfirm = ref(false)
 
 const totalQuestions = computed(() => questionStore.totalQuestions)
 const answeredQuestions = computed(() => questionStore.answeredQuestions)
@@ -238,6 +292,12 @@ function resetProgress() {
 function clearAllData() {
   questionStore.clearAllData()
   showClearDataConfirm.value = false
+  closeSettings()
+}
+
+function mergeWrongAnswers() {
+  questionStore.mergeWrongAnswers()
+  showMergeWrongAnswersConfirm.value = false
   closeSettings()
 }
 </script>

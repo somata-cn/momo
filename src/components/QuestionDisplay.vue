@@ -14,6 +14,7 @@
           <span class="text-xs sm:text-sm px-2 py-1 rounded" :class="currentQuestionType === 'single' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'">
             {{ currentQuestionType === 'single' ? '单选题' : '多选题' }}
           </span>
+          
         </div>
       </div>
       <div class="text-base sm:text-lg font-medium text-gray-800 leading-relaxed">
@@ -196,8 +197,14 @@
 
   <!-- 空状态 -->
   <div v-if="!currentQuestion && trainingMode !== 'memorize'" class="card text-center py-12">
-    <div class="text-gray-500 mb-4">暂无题目可显示</div>
-    <div class="text-sm text-gray-400">请先导入题目文件</div>
+    <div class="text-gray-500 mb-4">
+      <span v-if="trainingMode === 'wrong_only'">没有错题</span>
+      <span v-else>暂无题目可显示</span>
+    </div>
+    <div class="text-sm text-gray-400">
+      <span v-if="trainingMode === 'wrong_only'">继续努力，目前没有错题记录</span>
+      <span v-else>请先导入题目文件</span>
+    </div>
   </div>
 </template>
 
@@ -212,6 +219,8 @@ const currentQuestionIndex = computed(() => questionStore.currentQuestionIndex)
 const totalQuestions = computed(() => questionStore.totalQuestions)
 const userAnswers = computed(() => questionStore.userAnswers)
 const questionResults = computed(() => questionStore.questionResults)
+const wrongUserAnswers = computed(() => questionStore.wrongUserAnswers)
+const wrongQuestionResults = computed(() => questionStore.wrongQuestionResults)
 const trainingMode = computed(() => questionStore.trainingMode)
 const availableQuestionCount = computed(() => questionStore.availableQuestionCount)
 const currentQuestionType = computed(() => questionStore.currentQuestionType)
@@ -426,10 +435,18 @@ const currentDisplayIndex = computed(() => {
 // 监听题目变化
 watch(currentQuestion, (newQuestion) => {
   if (newQuestion) {
-    // 恢复已提交的答案
     const actualIndex = questionStore.getActualQuestionIndex(currentQuestionIndex.value)
-    const savedAnswer = userAnswers.value[actualIndex]
-    const savedResult = questionResults.value[actualIndex]
+    let savedAnswer, savedResult
+    
+    if (trainingMode.value === 'wrong_only') {
+      // 错题模式下，使用错题专用状态
+      savedAnswer = wrongUserAnswers.value[actualIndex]
+      savedResult = wrongQuestionResults.value[actualIndex]
+    } else {
+      // 正常模式下，使用普通状态
+      savedAnswer = userAnswers.value[actualIndex]
+      savedResult = questionResults.value[actualIndex]
+    }
     
     if (savedAnswer) {
       selectedOptions.value = [...savedAnswer]

@@ -53,14 +53,21 @@
               <span class="text-sm font-medium text-gray-700">训练模式：</span>
               <div class="flex space-x-2">
                 <button
-                  @click="questionStore.trainingMode = 'normal'"
+                  @click="questionStore.setTrainingMode('normal')"
                   class="px-3 py-1 text-xs rounded-full transition-colors"
                   :class="trainingMode === 'normal' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                 >
                   正常模式
                 </button>
                 <button
-                  @click="questionStore.trainingMode = 'memorize'"
+                  @click="questionStore.setTrainingMode('wrong_only')"
+                  class="px-3 py-1 text-xs rounded-full transition-colors"
+                  :class="trainingMode === 'wrong_only' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                >
+                  错题模式
+                </button>
+                <button
+                  @click="questionStore.setTrainingMode('memorize')"
                   class="px-3 py-1 text-xs rounded-full transition-colors"
                   :class="trainingMode === 'memorize' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                 >

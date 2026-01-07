@@ -88,15 +88,30 @@ const trainingMode = computed(() => questionStore.trainingMode)
 const availableQuestionCount = computed(() => questionStore.availableQuestionCount)
 
 const allQuestions = computed(() => {
-  // 显示所有题目
-  const questions = []
-  const sections = questionStore.sections
-  for (const sectionName in sections) {
-    if (Array.isArray(sections[sectionName])) {
-      questions.push(...sections[sectionName])
+  if (trainingMode.value === 'wrong_only') {
+    // 错题模式下，只显示错题
+    const wrongIndices = questionStore.availableQuestions
+    const allQuestions = []
+    const sections = questionStore.sections
+    for (const sectionName in sections) {
+      if (Array.isArray(sections[sectionName])) {
+        allQuestions.push(...sections[sectionName])
+      }
     }
+    // 根据availableQuestions过滤出错题
+    return allQuestions.filter(question => wrongIndices.includes(question.index))
+      .sort((a, b) => wrongIndices.indexOf(a.index) - wrongIndices.indexOf(b.index))
+  } else {
+    // 正常模式和背题模式显示所有题目
+    const questions = []
+    const sections = questionStore.sections
+    for (const sectionName in sections) {
+      if (Array.isArray(sections[sectionName])) {
+        questions.push(...sections[sectionName])
+      }
+    }
+    return questions.sort((a, b) => a.index - b.index)
   }
-  return questions.sort((a, b) => a.index - b.index)
 })
 
 const progressPercentage = computed(() => {
@@ -183,7 +198,18 @@ function calculateDynamicColumns() {
 
 function selectQuestion(index) {
   if (typeof index !== 'number' || index < 0) return
-  questionStore.setCurrentQuestion(index)
+  
+  if (trainingMode.value === 'wrong_only') {
+    // 错题模式下，找到该题目在availableQuestions中的索引
+    const wrongIndices = questionStore.availableQuestions
+    const targetIndex = wrongIndices.indexOf(index)
+    if (targetIndex !== -1) {
+      questionStore.setCurrentQuestion(targetIndex)
+    }
+  } else {
+    // 正常模式和背题模式直接使用索引
+    questionStore.setCurrentQuestion(index)
+  }
 }
 
 // 防抖函数

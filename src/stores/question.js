@@ -12,28 +12,62 @@ export const useQuestionStore = defineStore('question', () => {
   
   // 新增状态
   const trainingMode = ref('normal') // normal, wrong_only, memorize
+  
+  // 错题模式专用状态
+  const wrongUserAnswers = ref({})
+  const wrongQuestionResults = ref({})
 
   // 计算属性
   const currentQuestion = computed(() => {
+    if (trainingMode.value === 'wrong_only') {
+      // 错题模式下，检查是否有可用题目
+      if (availableQuestions.value.length === 0) {
+        return null
+      }
+    }
     const actualIndex = getActualQuestionIndex(currentQuestionIndex.value)
     return questions.value[actualIndex] || null
   })
   
   // 获取实际题目索引
   function getActualQuestionIndex(displayIndex) {
+    if (trainingMode.value === 'wrong_only') {
+      // 错题模式下，使用availableQuestions中的索引
+      return availableQuestions.value[displayIndex] ?? 0
+    }
     return displayIndex
   }
   
   const sections = computed(() => {
     const sectionMap = {}
+    // 访问所有相关的状态变量，确保它们成为计算属性的依赖项
+    const currentMode = trainingMode.value
+    const userAnswersValue = userAnswers.value
+    const questionResultsValue = questionResults.value
+    const wrongUserAnswersValue = wrongUserAnswers.value
+    const wrongQuestionResultsValue = wrongQuestionResults.value
+    
     questions.value.forEach((question, index) => {
       if (!sectionMap[question.section]) {
         sectionMap[question.section] = []
       }
+      
+      // 直接在计算属性中计算状态，确保所有依赖项都被正确跟踪
+      let status = 'unanswered'
+      if (currentMode === 'wrong_only') {
+        if (wrongUserAnswersValue[index]) {
+          status = wrongQuestionResultsValue[index]?.isCorrect ? 'correct' : 'incorrect'
+        }
+      } else {
+        if (userAnswersValue[index]) {
+          status = questionResultsValue[index]?.isCorrect ? 'correct' : 'incorrect'
+        }
+      }
+      
       sectionMap[question.section].push({
         ...question,
         index,
-        status: getQuestionStatus(index)
+        status
       })
     })
     return sectionMap
@@ -46,6 +80,19 @@ export const useQuestionStore = defineStore('question', () => {
   })
   
   const availableQuestions = computed(() => {
+    // 明确访问trainingMode，确保它成为计算属性的依赖项
+    const currentMode = trainingMode.value
+    if (currentMode === 'wrong_only') {
+      // 只返回错题索引
+      return questions.value
+        .map((_, index) => index)
+        .filter(index => {
+          // 使用questionResults来获取原始错题，而不是wrongQuestionResults
+          const result = questionResults.value[index]
+          return result && !result.isCorrect
+        })
+    }
+    // 正常模式和背题模式返回所有题目索引
     return Array.from({ length: questions.value.length }, (_, i) => i)
   })
   
@@ -59,8 +106,15 @@ export const useQuestionStore = defineStore('question', () => {
 
   // 方法
   function getQuestionStatus(index) {
-    if (!userAnswers.value[index]) return 'unanswered'
-    return questionResults.value[index]?.isCorrect ? 'correct' : 'incorrect'
+    if (trainingMode.value === 'wrong_only') {
+      // 错题模式下，使用错题专用状态
+      if (!wrongUserAnswers.value[index]) return 'unanswered'
+      return wrongQuestionResults.value[index]?.isCorrect ? 'correct' : 'incorrect'
+    } else {
+      // 正常模式下，使用普通状态
+      if (!userAnswers.value[index]) return 'unanswered'
+      return questionResults.value[index]?.isCorrect ? 'correct' : 'incorrect'
+    }
   }
 
   function loadQuestionsFromStorage() {
@@ -70,6 +124,10 @@ export const useQuestionStore = defineStore('question', () => {
       const storedResults = localStorage.getItem('questionResults')
       const storedTrainingMode = localStorage.getItem('trainingMode')
       const dataVersion = localStorage.getItem('dataVersion')
+      
+      // 错题模式数据
+      const storedWrongAnswers = localStorage.getItem('wrongUserAnswers')
+      const storedWrongResults = localStorage.getItem('wrongQuestionResults')
       
       // 数据版本控制
       if (dataVersion && dataVersion !== '1.0') {
@@ -101,11 +159,29 @@ export const useQuestionStore = defineStore('question', () => {
         }
       }
       if (storedTrainingMode) {
-        if (['normal', 'memorize'].includes(storedTrainingMode)) {
+        if (['normal', 'memorize', 'wrong_only'].includes(storedTrainingMode)) {
           trainingMode.value = storedTrainingMode
         } else {
           console.warn('训练模式数据无效，重置为normal')
           trainingMode.value = 'normal'
+        }
+      }
+      
+      // 加载错题模式数据
+      if (storedWrongAnswers) {
+        const parsed = JSON.parse(storedWrongAnswers)
+        if (typeof parsed === 'object' && parsed !== null) {
+          wrongUserAnswers.value = parsed
+        } else {
+          console.warn('错题模式答题数据格式无效')
+        }
+      }
+      if (storedWrongResults) {
+        const parsed = JSON.parse(storedWrongResults)
+        if (typeof parsed === 'object' && parsed !== null) {
+          wrongQuestionResults.value = parsed
+        } else {
+          console.warn('错题模式结果数据格式无效')
         }
       }
     } catch (error) {
@@ -117,6 +193,8 @@ export const useQuestionStore = defineStore('question', () => {
         localStorage.removeItem('userAnswers')
         localStorage.removeItem('questionResults')
         localStorage.removeItem('trainingMode')
+        localStorage.removeItem('wrongUserAnswers')
+        localStorage.removeItem('wrongQuestionResults')
       } catch (cleanupError) {
         console.error('清理损坏数据失败:', cleanupError)
       }
@@ -212,9 +290,7 @@ export const useQuestionStore = defineStore('question', () => {
     
     const question = currentQuestion.value
     const userAnswer = Array.isArray(answer) ? answer : [answer]
-    
-    // 保存用户答案
-    userAnswers.value[currentQuestionIndex.value] = userAnswer
+    const actualIndex = getActualQuestionIndex(currentQuestionIndex.value)
     
     // 判断答案是否正确
     const correctAnswer = question.answer
@@ -222,11 +298,26 @@ export const useQuestionStore = defineStore('question', () => {
                      userAnswer.every(ans => correctAnswer.includes(ans))
     
     // 保存结果
-    questionResults.value[currentQuestionIndex.value] = {
-      userAnswer,
-      correctAnswer,
-      isCorrect,
-      submittedAt: new Date().toISOString()
+    if (trainingMode.value === 'wrong_only') {
+      // 错题模式下，使用错题专用状态
+      wrongUserAnswers.value[actualIndex] = userAnswer
+      
+      wrongQuestionResults.value[actualIndex] = {
+        userAnswer,
+        correctAnswer,
+        isCorrect,
+        submittedAt: new Date().toISOString()
+      }
+    } else {
+      // 正常模式下，使用普通状态
+      userAnswers.value[actualIndex] = userAnswer
+      
+      questionResults.value[actualIndex] = {
+        userAnswer,
+        correctAnswer,
+        isCorrect,
+        submittedAt: new Date().toISOString()
+      }
     }
     
     saveQuestionsToStorage()
@@ -238,9 +329,13 @@ export const useQuestionStore = defineStore('question', () => {
     currentQuestionIndex.value = 0
     userAnswers.value = {}
     questionResults.value = {}
+    wrongUserAnswers.value = {}
+    wrongQuestionResults.value = {}
     localStorage.removeItem('studyQuestions')
     localStorage.removeItem('userAnswers')
     localStorage.removeItem('questionResults')
+    localStorage.removeItem('wrongUserAnswers')
+    localStorage.removeItem('wrongQuestionResults')
   }
 
   function resetProgress() {
@@ -248,6 +343,20 @@ export const useQuestionStore = defineStore('question', () => {
     questionResults.value = {}
     currentQuestionIndex.value = 0
     saveQuestionsToStorage()
+  }
+  
+  // 合并错题答题情况到正常模式
+  function mergeWrongAnswers() {
+    // 将错题模式的答题情况合并到正常模式
+    Object.assign(userAnswers.value, wrongUserAnswers.value)
+    Object.assign(questionResults.value, wrongQuestionResults.value)
+    
+    // 清空错题模式的答题情况
+    wrongUserAnswers.value = {}
+    wrongQuestionResults.value = {}
+    
+    saveQuestionsToStorage()
+    return true
   }
 
   function clearImportStatus() {
@@ -326,6 +435,10 @@ export const useQuestionStore = defineStore('question', () => {
     importStatus,
     trainingMode,
     
+    // 错题模式专用状态
+    wrongUserAnswers,
+    wrongQuestionResults,
+    
     // 计算属性
     sections,
     totalQuestions,
@@ -346,6 +459,7 @@ export const useQuestionStore = defineStore('question', () => {
     shuffleQuestions,
     setTrainingMode,
     getWrongQuestionStats,
-    getActualQuestionIndex
+    getActualQuestionIndex,
+    mergeWrongAnswers
   }
 })
