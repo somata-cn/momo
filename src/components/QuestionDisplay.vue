@@ -1,6 +1,6 @@
 <template>
   <!-- 正常模式 - 单题显示 -->
-  <div v-if="trainingMode !== 'memorize' && currentQuestion" class="card">
+  <div ref="questionCardRef" v-if="trainingMode !== 'memorize' && currentQuestion" class="card">
     <!-- 题目头部信息 -->
     <div class="mb-4 sm:mb-6">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
@@ -230,6 +230,7 @@ const allQuestions = computed(() => {
 const selectedOptions = ref([])
 const hasSubmitted = ref(false)
 const isCorrect = ref(false)
+const questionCardRef = ref(null)
 
 // 解析选项
 const parsedOptions = computed(() => {
@@ -427,6 +428,17 @@ watch(currentQuestion, (newQuestion) => {
       hasSubmitted.value = false
       isCorrect.value = false
     }
+    
+    // 延迟滚动，确保DOM已更新
+    setTimeout(() => {
+      if (questionCardRef.value) {
+        questionCardRef.value.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+          inline: 'nearest'
+        })
+      }
+    }, 100)
   }
 }, { immediate: true })
 
