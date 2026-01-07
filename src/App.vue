@@ -57,21 +57,21 @@
                   class="px-3 py-1 text-xs rounded-full transition-colors"
                   :class="trainingMode === 'normal' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                 >
-                  正常模式
+                  正常
                 </button>
                 <button
                   @click="questionStore.setTrainingMode('wrong_only')"
                   class="px-3 py-1 text-xs rounded-full transition-colors"
                   :class="trainingMode === 'wrong_only' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                 >
-                  错题模式
+                  错题
                 </button>
                 <button
                   @click="questionStore.setTrainingMode('memorize')"
                   class="px-3 py-1 text-xs rounded-full transition-colors"
                   :class="trainingMode === 'memorize' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                 >
-                  背题模式
+                  背题
                 </button>
               </div>
             </div>
