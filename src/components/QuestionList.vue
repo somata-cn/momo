@@ -33,14 +33,14 @@
         <div>题目: {{ allQuestions.length }} | 行数: {{ Math.ceil(allQuestions.length / dynamicColumns) }}</div>
       </div>
       <div
-        v-for="question in allQuestions"
+        v-for="(question, listIndex) in allQuestions"
         :key="question.index"
-        @click="selectQuestion(question.index)"
+        @click="selectQuestion(question.index, listIndex)"
         class="question-grid-item aspect-square w-full max-w-8 h-8 flex items-center justify-center text-xs font-medium rounded cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 mx-auto"
         :class="getQuestionBlockClass(question)"
-        :title="`第 ${question.index + 1} 题`"
+        :title="trainingMode === 'wrong_only' ? `第 ${listIndex + 1} 题` : `第 ${question.index + 1} 题`"
       >
-        {{ question.index + 1 }}
+        {{ trainingMode === 'wrong_only' ? listIndex + 1 : question.index + 1 }}
       </div>
     </div>
 
@@ -81,26 +81,49 @@ const containerRef = ref(null)
 const dynamicColumns = ref(12)
 
 const currentQuestionIndex = computed(() => questionStore.currentQuestionIndex)
-const totalQuestions = computed(() => questionStore.totalQuestions)
-const answeredQuestions = computed(() => questionStore.answeredQuestions)
-const correctAnswers = computed(() => questionStore.correctAnswers)
+const totalQuestions = computed(() => {
+  if (trainingMode.value === 'wrong_only') {
+    // 错题模式下，总题数是错题数量
+    return questionStore.availableQuestionCount
+  }
+  return questionStore.totalQuestions
+})
+
+const answeredQuestions = computed(() => {
+  if (trainingMode.value === 'wrong_only') {
+    // 错题模式下，已答题数是已答错题数量
+    return Object.keys(questionStore.wrongUserAnswers).length
+  }
+  return questionStore.answeredQuestions
+})
+
+const correctAnswers = computed(() => {
+  if (trainingMode.value === 'wrong_only') {
+    // 错题模式下，正确题数是已答对的错题数量
+    return Object.values(questionStore.wrongQuestionResults).filter(result => result.isCorrect).length
+  }
+  return questionStore.correctAnswers
+})
 const trainingMode = computed(() => questionStore.trainingMode)
 const availableQuestionCount = computed(() => questionStore.availableQuestionCount)
 
 const allQuestions = computed(() => {
   if (trainingMode.value === 'wrong_only') {
-    // 错题模式下，只显示错题
+    // 错题模式下，只显示错题，直接根据availableQuestions创建题目列表
     const wrongIndices = questionStore.availableQuestions
-    const allQuestions = []
-    const sections = questionStore.sections
-    for (const sectionName in sections) {
-      if (Array.isArray(sections[sectionName])) {
-        allQuestions.push(...sections[sectionName])
+    // 直接根据availableQuestions的顺序创建题目列表，确保顺序完全一致
+    return wrongIndices.map(index => {
+      // 直接从questions.value中获取题目，确保数据准确
+      const question = questionStore.questions[index]
+      if (!question) return null
+      // 获取题目状态
+      const status = questionStore.getQuestionStatus(index)
+      return {
+        ...question,
+        index,
+        status
       }
-    }
-    // 根据availableQuestions过滤出错题
-    return allQuestions.filter(question => wrongIndices.includes(question.index))
-      .sort((a, b) => wrongIndices.indexOf(a.index) - wrongIndices.indexOf(b.index))
+    }).filter(Boolean)
   } else {
     // 正常模式和背题模式显示所有题目
     const questions = []
@@ -131,7 +154,15 @@ function getQuestionBlockClass(question) {
     return 'bg-gray-300 text-gray-700 hover:bg-gray-400'
   }
   
-  const isCurrent = question.index === currentQuestionIndex.value
+  let isCurrent = false
+  if (trainingMode.value === 'wrong_only') {
+    // 错题模式下，当前题目是availableQuestions[currentQuestionIndex]对应的题目
+    const currentActualIndex = questionStore.availableQuestions[currentQuestionIndex.value]
+    isCurrent = question.index === currentActualIndex
+  } else {
+    // 正常模式下，直接比较索引
+    isCurrent = question.index === currentQuestionIndex.value
+  }
   
   if (isCurrent) {
     return 'border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold'
@@ -196,16 +227,13 @@ function calculateDynamicColumns() {
   }
 }
 
-function selectQuestion(index) {
+function selectQuestion(index, listIndex) {
   if (typeof index !== 'number' || index < 0) return
   
   if (trainingMode.value === 'wrong_only') {
-    // 错题模式下，找到该题目在availableQuestions中的索引
-    const wrongIndices = questionStore.availableQuestions
-    const targetIndex = wrongIndices.indexOf(index)
-    if (targetIndex !== -1) {
-      questionStore.setCurrentQuestion(targetIndex)
-    }
+    // 错题模式下，直接使用listIndex设置currentQuestionIndex
+    // 因为allQuestions和availableQuestions顺序完全一致
+    questionStore.setCurrentQuestion(listIndex)
   } else {
     // 正常模式和背题模式直接使用索引
     questionStore.setCurrentQuestion(index)

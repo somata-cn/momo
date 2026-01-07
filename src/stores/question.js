@@ -365,6 +365,13 @@ export const useQuestionStore = defineStore('question', () => {
   
   // 重新打乱题目
   function shuffleQuestions() {
+    // 保存原始数据
+    const originalQuestions = [...questions.value]
+    const originalUserAnswers = { ...userAnswers.value }
+    const originalQuestionResults = { ...questionResults.value }
+    const originalWrongUserAnswers = { ...wrongUserAnswers.value }
+    const originalWrongQuestionResults = { ...wrongQuestionResults.value }
+    
     const indices = Array.from({ length: questions.value.length }, (_, i) => i)
     
     // Fisher-Yates 洗牌算法
@@ -376,6 +383,37 @@ export const useQuestionStore = defineStore('question', () => {
     // 根据打乱后的顺序重新排列题目
     const shuffledQuestions = indices.map(index => questions.value[index]).filter(Boolean)
     questions.value = shuffledQuestions
+    
+    // 重新索引答题记录
+    const newUserAnswers = {}
+    const newQuestionResults = {}
+    const newWrongUserAnswers = {}
+    const newWrongQuestionResults = {}
+    
+    indices.forEach((originalIndex, newIndex) => {
+      // 更新正常模式的答题记录
+      if (originalUserAnswers[originalIndex]) {
+        newUserAnswers[newIndex] = originalUserAnswers[originalIndex]
+      }
+      if (originalQuestionResults[originalIndex]) {
+        newQuestionResults[newIndex] = originalQuestionResults[originalIndex]
+      }
+      
+      // 更新错题模式的答题记录
+      if (originalWrongUserAnswers[originalIndex]) {
+        newWrongUserAnswers[newIndex] = originalWrongUserAnswers[originalIndex]
+      }
+      if (originalWrongQuestionResults[originalIndex]) {
+        newWrongQuestionResults[newIndex] = originalWrongQuestionResults[originalIndex]
+      }
+    })
+    
+    // 更新状态
+    userAnswers.value = newUserAnswers
+    questionResults.value = newQuestionResults
+    wrongUserAnswers.value = newWrongUserAnswers
+    wrongQuestionResults.value = newWrongQuestionResults
+    
     currentQuestionIndex.value = 0
     saveQuestionsToStorage()
   }
